@@ -67,6 +67,16 @@ dread itself the punchline — the reviewer merges despite not
 understanding (criteria 2, 3). (c) The single sentence was split into
 three short flat ones, giving the deadpan cadence the brief asks for
 (criterion 3). The revised line is 89 characters, inside the 140 cap.
+
+Pass 3 — validation guard:
+
+The gate gives an invalid entry 0 with no rate, so the program itself
+now refuses to emit one: before writing, main() checks that LINE is
+non-blank UTF-8 text of 1 to 140 characters and raises ValueError
+otherwise. The guard changes nothing when the line is valid — same
+path, same single write, no trailing newline, no extra output — but
+it means a later edit to LINE can never silently ship an entry the
+gate would refuse.
 """
 
 import os
@@ -78,6 +88,11 @@ LINE = (
 
 
 def main():
+    if not LINE.strip():
+        raise ValueError("entry line must not be blank")
+    LINE.encode("utf-8")
+    if len(LINE) > 140:
+        raise ValueError(f"entry line is {len(LINE)} chars, over the 140 cap")
     out_dir = os.environ.get("MAKEFUN_OUTPUT_DIR", "/output")
     path = os.path.join(out_dir, "entry.txt")
     os.makedirs(out_dir, exist_ok=True)
